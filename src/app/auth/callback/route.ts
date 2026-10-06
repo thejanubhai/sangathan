@@ -1,39 +1,44 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
+import { adminAuth } from '@/lib/firebase/admin';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get('next') ?? '/en/dashboard'
-
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error) {
-      // --- Post-Verification Setup Logic ---
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        // Check if profile exists
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (!profile) {
-            // New User Flow: Redirect to Onboarding
-            // Ensure they have organization name and full name before phone verification
-            return NextResponse.redirect(`${origin}/en/onboarding`)
-        }
-      }
-
-      return NextResponse.redirect(`${origin}${next}`)
-    }
+  const { searchParams, origin } = new URL(request.url);
+  const token = searchParams.get('token');
+  
+  if (!token) {
+    return NextResponse.redirect(`${origin}/?error=missing_token`);
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/login?error=auth_code_error`)
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, returnSecureToken: true }),
+    });
+
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error?.message || 'Failed to sign in with custom token');
+    }
+
+    const idToken = data.idToken;
+    const expiresIn = 60 * 60 * 24 * 5 * 1000;
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+
+    const cookieStore = await cookies();
+    cookieStore.set('__session', sessionCookie, { 
+      maxAge: expiresIn, 
+      httpOnly: true, 
+      secure: true, 
+      path: '/' 
+    });
+
+    return NextResponse.redirect(`${origin}/dashboard`);
+  } catch (error) {
+    console.error('Auth Callback Error:', error);
+    return NextResponse.redirect(`${origin}/?error=auth_failed`);
+  }
 }

@@ -1,22 +1,23 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request)
+export default async function proxy(request: NextRequest) {
+  // God Mode Universal Auth: We use Firebase session cookies (__session)
+  // We no longer rely on Supabase Edge middleware for auth refresh.
+  // The actual verification happens in Server Components via Firebase Admin.
+  
+  const hasSession = request.cookies.has('__session');
+  
+  // Protect /dashboard and /admin routes
+  if (!hasSession && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/admin'))) {
+    return NextResponse.redirect(new URL('https://janubhai.space/auth?app=nothingness', request.url));
+  }
+
+  return NextResponse.next();
 }
-
-export default proxy
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 

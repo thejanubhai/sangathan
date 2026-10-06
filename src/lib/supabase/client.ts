@@ -1,17 +1,25 @@
-import { createBrowserClient } from '@supabase/ssr'
-import { Database } from '@/types/database'
-import { getSupabasePublicKey } from '@/lib/supabase/env'
+// GOD MODE: Client-side Supabase stub
+// Since all Auth goes through janubhai.space, and data fetching is mostly SSR,
+// this just prevents client-side crashes if imported.
 
-export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabasePublicKey = getSupabasePublicKey()
-
-  if (!supabaseUrl || !supabasePublicKey) {
-    throw new Error('Missing Supabase public configuration')
-  }
-
-  return createBrowserClient<Database>(
-    supabaseUrl,
-    supabasePublicKey,
-  )
-}
+export const createClient = () => {
+  return {
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null }),
+      getSession: async () => ({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signOut: async () => {
+        window.location.href = "https://janubhai.space/auth?app=nothingness";
+      }
+    },
+    from: (table: string) => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: null, error: null }),
+          then: (res: any) => res({ data: [], error: null })
+        }),
+        then: (res: any) => res({ data: [], error: null })
+      })
+    })
+  };
+};
