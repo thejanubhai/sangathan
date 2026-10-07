@@ -1,6 +1,4 @@
 // GOD MODE: Client-side Supabase stub
-// Since all Auth goes through janubhai.space, and data fetching is mostly SSR,
-// this just prevents client-side crashes if imported.
 
 export const createClient = () => {
   return {
@@ -9,7 +7,7 @@ export const createClient = () => {
       getSession: async () => ({ data: { session: null }, error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       signOut: async () => {
-        window.location.href = "https://janubhai.space/auth?app=nothingness";
+        window.location.href = "https://janubhai.space/auth?app=sangathan";
       }
     },
     from: (table: string) => ({
@@ -19,7 +17,23 @@ export const createClient = () => {
           then: (res: any) => res({ data: [], error: null })
         }),
         then: (res: any) => res({ data: [], error: null })
+      }),
+      insert: async () => ({ data: null, error: null }),
+      update: async () => ({ data: null, error: null }),
+      delete: async () => ({ data: null, error: null })
+    }),
+    channel: (name: string) => ({
+      on: () => ({
+        subscribe: () => {}
+      }),
+      subscribe: () => {}
+    }),
+    storage: {
+      from: (bucket: string) => ({
+        upload: async () => ({ data: null, error: null }),
+        download: async () => ({ data: null, error: null }),
+        getPublicUrl: () => ({ data: { publicUrl: "" } })
       })
-    })
+    }
   };
 };
