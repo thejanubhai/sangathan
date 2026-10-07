@@ -1,4 +1,4 @@
-declare module '@supabase/supabase-js' {
+declare module '@/lib/supabase/client' {
   export type SupabaseClient = any;
   export type User = any;
   export type Session = any;

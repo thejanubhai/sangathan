@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'
 import { NextResponse } from 'next/server'
 
 import 'server-only'
