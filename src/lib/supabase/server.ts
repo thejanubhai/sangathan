@@ -13,7 +13,7 @@ class SupabaseQueryBuilder {
   _eq: { key: string, val: any }[] = [];
 
   constructor(collection: string) {
-    this.collection = collection;
+    this.collection = `sangathan_${collection}`;
   }
 
   select(cols: string) {
@@ -191,5 +191,6 @@ export const createClient = async () => {
 };
 
 export const createServerClient = async () => createClient(); // Fallback
+
 
 
